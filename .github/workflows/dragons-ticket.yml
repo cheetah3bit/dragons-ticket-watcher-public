@@ -1,0 +1,60 @@
+name: ドラチケ監視（8/13 DeNA戦）
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dragons-ticket-watch-2026-08-13
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 在庫状態ブランチを取得
+        uses: actions/checkout@v4
+        with:
+          ref: inventory-state
+          path: inventory-state
+
+      - name: 前回の在庫状態を復元
+        run: |
+          mkdir -p .state/dragons-ticket
+          cp inventory-state/.state/dragons-ticket/notified.json .state/dragons-ticket/notified.json
+
+      - name: Node.jsを準備
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 依存関係をインストール
+        run: npm install --no-audit --no-fund
+
+      - name: ブラウザをインストール
+        run: npx playwright install --with-deps chromium
+
+      - name: 購入可能状態を確認
+        env:
+          DRAGONS_LOGIN_ID: ${{ secrets.DRAGONS_LOGIN_ID }}
+          DRAGONS_PASSWORD: ${{ secrets.DRAGONS_PASSWORD }}
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+        run: npm run monitor
+
+      - name: 今回の在庫状態を保存
+        if: always() && hashFiles('.state/dragons-ticket/notified.json') != ''
+        run: |
+          cp .state/dragons-ticket/notified.json inventory-state/.state/dragons-ticket/notified.json
+          cd inventory-state
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f .state/dragons-ticket/notified.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Update inventory state"
+            git push
+          fi

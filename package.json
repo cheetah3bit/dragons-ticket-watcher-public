@@ -1,0 +1,21 @@
+{
+  "name": "multi-site-ticket-watchers",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Multiple ticket-site availability watchers",
+  "type": "module",
+  "scripts": {
+    "monitor": "node watchers/dragons-ticket/monitor.mjs",
+    "test": "node --test",
+    "worker:types": "wrangler types --config workers/line-webhook/wrangler.jsonc workers/line-webhook/worker-configuration.d.ts",
+    "worker:check": "tsc -p workers/line-webhook/tsconfig.json && wrangler deploy --dry-run --config workers/line-webhook/wrangler.jsonc"
+  },
+  "dependencies": {
+    "playwright": "1.54.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "typescript": "^7.0.2",
+    "wrangler": "^4.113.0"
+  }
+}

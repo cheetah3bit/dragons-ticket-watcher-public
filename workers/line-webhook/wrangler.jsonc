@@ -1,0 +1,20 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "ticket-inventory-line-webhook",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-07-22",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "GITHUB_OWNER": "cheetah3bit",
+    "GITHUB_REPO": "dragons-ticket-watcher-public",
+    "GITHUB_WORKFLOW": "inventory-query.yml",
+    "GITHUB_MONITOR_WORKFLOW": "dragons-ticket.yml"
+  },
+  "triggers": {
+    "crons": ["*/5 * * * *"]
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
+}
