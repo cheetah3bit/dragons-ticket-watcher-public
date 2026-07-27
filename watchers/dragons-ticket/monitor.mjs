@@ -189,6 +189,12 @@ main().catch((error) => {
   for (const secret of [LOGIN_ID, PASSWORD, process.env.LINE_CHANNEL_ACCESS_TOKEN]) {
     if (secret) message = message.replaceAll(secret, "[REDACTED]");
   }
+  const transientFailure = (error instanceof Error && error.name === "TimeoutError")
+    || /今回は判定を保留|サイトが混雑|一時エラー/.test(message);
+  if (transientFailure) {
+    console.warn(`一時的に確認できなかったため、今回は判定を保留します: ${message}`);
+    return;
+  }
   console.error(message);
   process.exitCode = 1;
 });
