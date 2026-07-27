@@ -2,8 +2,6 @@ name: ドラチケ監視（8/13 DeNA戦）
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "*/5 * * * *"
 
 permissions:
   contents: write
