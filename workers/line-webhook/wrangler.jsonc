@@ -11,7 +11,7 @@
     "GITHUB_MONITOR_WORKFLOW": "dragons-ticket.yml"
   },
   "triggers": {
-    "crons": ["*/5 * * * *"]
+    "crons": []
   },
   "observability": {
     "enabled": true,
