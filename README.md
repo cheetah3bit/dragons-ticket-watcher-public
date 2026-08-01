@@ -1,6 +1,6 @@
 # 複数チケットサイト監視
 
-サイト別の監視処理とWorkflowを分離し、LINE通知だけを共通化した構成です。現在はドラチケの2026年8月13日DeNA戦を監視しています。
+サイト別の監視処理とWorkflowを分離し、LINE通知だけを共通化した構成です。現在はドラチケの2026年8月15日巨人戦を監視しています。
 
 ```text
 watchers/
@@ -28,7 +28,7 @@ Cloudflare Cronから公開リポジトリのGitHub Actionsを5分間隔で起�
 
 ## 2. GitHubへ登録
 
-このフォルダーを**非公開リポジトリ**としてGitHubへpushします。リポジトリの `Settings` → `Secrets and variables` → `Actions` → `New repository secret` で次を登録します。
+このフォルダーをGitHubへpushします。リポジトリの `Settings` → `Secrets and variables` → `Actions` → `New repository secret` で次を登録します。
 
 | Secret名 | 値 |
 |---|---|
@@ -40,7 +40,7 @@ Cloudflare Cronから公開リポジトリのGitHub Actionsを5分間隔で起�
 
 ## 3. 動作確認
 
-GitHubの `Actions` → `ドラチケ監視（8/13 DeNA戦）` → `Run workflow` を実行します。成功後はGitHub Actionsが5分間隔で確認します。GitHub側の都合で開始が数分以上遅れる場合があります。
+GitHubの `Actions` → `ドラチケ監視（8/15 巨人戦）` → `Run workflow` を実行します。成功後はGitHub Actionsが5分間隔で確認します。GitHub側の都合で開始が数分以上遅れる場合があります。
 
 ## サイトを追加する
 
