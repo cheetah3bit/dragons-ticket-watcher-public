@@ -10,10 +10,10 @@ test("対象試合の一般販売入口を検出できる", async () => {
       waitUntil: "domcontentloaded",
       timeout: 45_000,
     });
-    const marker = page.locator("#Spn20260815");
-    assert.equal(await marker.count(), 1, "8月15日の試合が見つかりません");
+    const marker = page.locator("#Spn20260816");
+    assert.equal(await marker.count(), 1, "8月16日の試合が見つかりません");
     const game = marker.locator("xpath=ancestor::div[contains(@class,'dayDoc')][1]");
-    assert.match(await game.innerText(), /8\/15[\s\S]*14:00/);
+    assert.match(await game.innerText(), /8\/16[\s\S]*13:30/);
     assert.match(await game.innerText(), /発売中/);
     assert.equal(await game.locator(".scheBtn a", { hasText: "発売中" }).count(), 1);
   } finally {

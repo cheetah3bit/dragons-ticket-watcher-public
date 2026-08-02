@@ -1,4 +1,4 @@
-name: ドラチケ監視（8/15 巨人戦）
+name: ドラチケ監視（8/16 巨人戦）
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: dragons-ticket-watch-2026-08-15
+  group: dragons-ticket-watch-2026-08-16
   cancel-in-progress: false
 
 jobs:
@@ -26,7 +26,7 @@ jobs:
       - name: 前回の在庫状態を復元
         run: |
           mkdir -p .state/dragons-ticket
-          cp inventory-state/.state/dragons-ticket/2026-08-15.json .state/dragons-ticket/2026-08-15.json
+          cp inventory-state/.state/dragons-ticket/2026-08-16.json .state/dragons-ticket/2026-08-16.json
 
       - name: Node.jsを準備
         uses: actions/setup-node@v4
@@ -47,13 +47,13 @@ jobs:
         run: npm run monitor
 
       - name: 今回の在庫状態を保存
-        if: always() && hashFiles('.state/dragons-ticket/2026-08-15.json') != ''
+        if: always() && hashFiles('.state/dragons-ticket/2026-08-16.json') != ''
         run: |
-          cp .state/dragons-ticket/2026-08-15.json inventory-state/.state/dragons-ticket/2026-08-15.json
+          cp .state/dragons-ticket/2026-08-16.json inventory-state/.state/dragons-ticket/2026-08-16.json
           cd inventory-state
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f .state/dragons-ticket/2026-08-15.json
+          git add -f .state/dragons-ticket/2026-08-16.json
           if ! git diff --cached --quiet; then
             git commit -m "Update inventory state"
             git push
