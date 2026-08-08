@@ -40,7 +40,7 @@ Cloudflare Cronから公開リポジトリのGitHub Actionsを5分間隔で起�
 
 ## 3. 動作確認
 
-GitHubの `Actions` → `ドラチケ監視（8/16 巨人戦）` → `Run workflow` を実行します。成功後はGitHub Actionsが5分間隔で確認します。GitHub側の都合で開始が数分以上遅れる場合があります。
+GitHubの `Actions` → `ドラチケ監視（8/16 巨人戦）` → `Run workflow` を実行します。成功後はGitHub Actionsが通常5分間隔、毎日9:50～10:30（日本時間）は2分間隔で確認します。GitHub側の都合で開始が数分以上遅れる場合があります。
 
 ## サイトを追加する
 

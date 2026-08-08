@@ -1,3 +1,5 @@
+import { shouldTriggerScheduledMonitor } from "./schedule";
+
 type LineTextEvent = {
   type: "message";
   replyToken: string;
@@ -115,7 +117,7 @@ export default {
           "中日ドラゴンズ vs 読売ジャイアンツ",
           "一般チケット → 一般席",
           "2枚",
-          "5分間隔で監視中",
+          "通常5分間隔（9:50～10:30は2分間隔）",
         ].join("\n")));
         continue;
       }
@@ -133,6 +135,8 @@ export default {
     return new Response("OK");
   },
   async scheduled(controller, env, ctx): Promise<void> {
-    ctx.waitUntil(triggerScheduledMonitor(env));
+    if (shouldTriggerScheduledMonitor(controller.scheduledTime)) {
+      ctx.waitUntil(triggerScheduledMonitor(env));
+    }
   },
 } satisfies ExportedHandler<Env>;
