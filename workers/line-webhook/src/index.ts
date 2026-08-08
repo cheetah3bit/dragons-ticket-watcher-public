@@ -113,10 +113,10 @@ export default {
       if (event.message.text.trim() === "監視対象") {
         ctx.waitUntil(replyLine(env, event.replyToken, [
           "【現在の監視対象】",
-          "2026年8月16日(日)",
-          "中日ドラゴンズ vs 読売ジャイアンツ",
+          "2026年8月27日(木)",
+          "中日ドラゴンズ vs 阪神タイガース",
           "一般チケット → 一般席",
-          "2枚",
+          "3枚",
           "通常5分間隔（9:50～10:30は2分間隔）",
         ].join("\n")));
         continue;
