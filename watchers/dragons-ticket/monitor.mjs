@@ -4,7 +4,6 @@ import { dirname } from "node:path";
 import { notifyLine } from "../../shared/line-notify.mjs";
 import { config } from "./config.mjs";
 
-const TARGET_DAY_START = Date.parse(`${config.targetDate.slice(0, 4)}-${config.targetDate.slice(4, 6)}-${config.targetDate.slice(6, 8)}T00:00:00+09:00`);
 const DRY_RUN = process.env.DRY_RUN === "1";
 const LOGIN_ID = process.env.DRAGONS_LOGIN_ID ?? process.env.EMAIL;
 const PASSWORD = process.env.DRAGONS_PASSWORD ?? process.env.PASSWORD;
@@ -36,41 +35,46 @@ async function clickPurchaseStep(page, label) {
   return true;
 }
 
-async function readPreviousState() {
+async function readPreviousState(target) {
   try {
-    return JSON.parse(await readFile(config.stateFile, "utf8"));
+    return JSON.parse(await readFile(target.stateFile, "utf8"));
   } catch {
     return {};
   }
 }
 
-async function saveState(available, url = "") {
+async function saveState(target, available, url = "") {
   if (DRY_RUN) return;
-  await mkdir(dirname(config.stateFile), { recursive: true });
-  await writeFile(config.stateFile, JSON.stringify({
+  await mkdir(dirname(target.stateFile), { recursive: true });
+  await writeFile(target.stateFile, JSON.stringify({
     available,
     url,
   }));
 }
 
-async function reportUnavailable(reason) {
+async function reportUnavailable(target, reason) {
   console.log(reason);
-  const previousState = await readPreviousState();
+  const previousState = await readPreviousState(target);
   if (previousState.available === true && !DRY_RUN) {
     await notifyLine([
       "【ドラチケ在庫切れ】",
-      config.targetGameLabel,
-      `一般席で${config.quantity}枚を選択可能な在庫がなくなりました。`,
+      target.targetGameLabel,
+      `一般席で${target.quantity}枚を選択可能な在庫がなくなりました。`,
       "監視を継続します。",
     ].join("\n"));
     console.log("在庫ありから在庫なしへの変化をLINEへ通知しました");
   }
-  await saveState(false);
+  await saveState(target, false);
+}
+
+function targetDayStart(target) {
+  return Date.parse(`${target.targetDate.slice(0, 4)}-${target.targetDate.slice(4, 6)}-${target.targetDate.slice(6, 8)}T00:00:00+09:00`);
 }
 
 async function main() {
-  if (Date.now() >= TARGET_DAY_START + 86_400_000) {
-    console.log("対象試合日を過ぎたため監視を終了します");
+  const activeTargets = config.targets.filter((target) => Date.now() < targetDayStart(target) + 86_400_000);
+  if (activeTargets.length === 0) {
+    console.log("すべての対象試合日を過ぎたため監視を終了します");
     return;
   }
 
@@ -99,19 +103,21 @@ async function main() {
       throw new Error(`ログインできませんでした${error ? `: ${error}` : ""}`);
     }
 
-    await page.goto(config.calendarUrl, { waitUntil: "domcontentloaded" });
+    for (const target of activeTargets) {
+      console.log(`監視開始: ${target.targetGameLabel}（一般席${target.quantity}枚）`);
+      await page.goto(config.calendarUrl, { waitUntil: "domcontentloaded" });
     if (/ErrorForBusy|ErrorForApplication/i.test(page.url())) {
       throw new Error("サイトが混雑または一時エラーのため、今回は判定を保留します");
     }
 
-    const dateMarker = page.locator(`#Spn${config.targetDate}`);
+    const dateMarker = page.locator(`#Spn${target.targetDate}`);
     if ((await dateMarker.count()) === 0) throw new Error("対象試合がカレンダーに見つかりません");
     const targetBox = dateMarker.locator("xpath=ancestor::div[contains(@class,'dayDoc')][1]");
     const control = targetBox.locator(".scheBtn a").filter({ hasText: /発売中|購入/ }).first();
 
     if ((await control.count()) === 0 || !(await control.isVisible())) {
-      await reportUnavailable("まだ購入可能ではありません（対象試合の購入ボタンなし）");
-      return;
+      await reportUnavailable(target, "まだ購入可能ではありません（対象試合の購入ボタンなし）");
+      continue;
     }
 
     await Promise.all([
@@ -134,20 +140,20 @@ async function main() {
         const controls = await page.locator("a:visible, button:visible").allTextContents();
         console.log("診断（選択肢）:", controls.map((text) => text.trim()).filter(Boolean).slice(-40).join(" | "));
       }
-      await reportUnavailable("一般チケットがまだ選択できません");
-      return;
+      await reportUnavailable(target, "一般チケットがまだ選択できません");
+      continue;
     }
     if (!(await clickPurchaseStep(page, "一般席"))) {
-      await reportUnavailable("一般席がまだ選択できません");
-      return;
+      await reportUnavailable(target, "一般席がまだ選択できません");
+      continue;
     }
 
     // 売り切れ席にも0～12枚のoptionは残るが、select自体がdisabledになる。
-    // 表示中かつ有効な枚数欄で「2」を選べる席種がある場合だけ在庫ありとする。
+    // 表示中かつ有効な枚数欄で指定枚数を選べる席種がある場合だけ在庫ありとする。
     const enabledQuantitySelects = page.locator("select:visible:enabled");
     let purchasable = false;
     for (let index = 0; index < await enabledQuantitySelects.count(); index += 1) {
-      const optionTwo = enabledQuantitySelects.nth(index).locator(`option[value='${config.quantity}']:not([disabled])`);
+      const optionTwo = enabledQuantitySelects.nth(index).locator(`option[value='${target.quantity}']:not([disabled])`);
       if ((await optionTwo.count()) > 0) {
         purchasable = true;
         break;
@@ -155,22 +161,22 @@ async function main() {
     }
 
     if (!purchasable) {
-      await reportUnavailable(`一般席に${config.quantity}枚を選択可能な在庫はありません`);
-      return;
+      await reportUnavailable(target, `一般席に${target.quantity}枚を選択可能な在庫はありません`);
+      continue;
     }
 
-    const previousState = await readPreviousState();
+    const previousState = await readPreviousState(target);
     const message = [
       "【ドラチケ購入可能】",
-      config.targetGameLabel,
-      `一般チケット → 一般席で、${config.quantity}枚を選択できる購入画面を確認しました。`,
+      target.targetGameLabel,
+      `一般チケット → 一般席で、${target.quantity}枚を選択できる購入画面を確認しました。`,
       page.url(),
       "在庫は変動します。お早めに購入手続きをしてください。",
     ].join("\n");
     if (DRY_RUN) {
       console.log("ドライラン成功: LINE通知条件を満たしました");
       console.log(message);
-      return;
+      continue;
     }
     if (previousState.available !== true) {
       await notifyLine(message);
@@ -178,7 +184,8 @@ async function main() {
     } else {
       console.log("購入可能状態は前回から継続中です（重複通知は省略）");
     }
-    await saveState(true, page.url());
+    await saveState(target, true, page.url());
+    }
   } finally {
     await browser.close();
   }
