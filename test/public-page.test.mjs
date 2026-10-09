@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
 
-test("対象2試合の一般販売入口を検出できる", async () => {
+test("対象試合の一般販売入口を検出できる", async () => {
   const browser = await chromium.launch({ headless: true });
   try {
     const page = await browser.newPage({ locale: "ja-JP" });
@@ -10,7 +10,7 @@ test("対象2試合の一般販売入口を検出できる", async () => {
       waitUntil: "domcontentloaded",
       timeout: 45_000,
     });
-    for (const [date, label, time] of [["20260921", "9/21", "14:00"], ["20261122", "11/22", "13:00"]]) {
+    for (const [date, label, time] of [["20261122", "11/22", "13:00"]]) {
       const marker = page.locator(`#Spn${date}`);
       assert.equal(await marker.count(), 1, `${label}の試合が見つかりません`);
       const game = marker.locator("xpath=ancestor::div[contains(@class,'dayDoc')][1]");

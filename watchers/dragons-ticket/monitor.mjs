@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { notifyLine } from "../../shared/line-notify.mjs";
 import { config } from "./config.mjs";
+import { isTransientMonitorError } from "./transient-error.mjs";
 
 const DRY_RUN = process.env.DRY_RUN === "1";
 const LOGIN_ID = process.env.DRAGONS_LOGIN_ID ?? process.env.EMAIL;
@@ -196,8 +197,7 @@ main().catch((error) => {
   for (const secret of [LOGIN_ID, PASSWORD, process.env.LINE_CHANNEL_ACCESS_TOKEN]) {
     if (secret) message = message.replaceAll(secret, "[REDACTED]");
   }
-  const transientFailure = (error instanceof Error && error.name === "TimeoutError")
-    || /今回は判定を保留|サイトが混雑|一時エラー/.test(message);
+  const transientFailure = isTransientMonitorError(error, message);
   if (transientFailure) {
     console.warn(`一時的に確認できなかったため、今回は判定を保留します: ${message}`);
     return;
